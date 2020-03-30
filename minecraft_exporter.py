@@ -203,15 +203,15 @@ class MinecraftCollector(object):
                             elif nkey == "minecraft:damage_dealt":
                                 mc_damage_dealt.add_sample('mc_damage_dealt_total',value=nval,labels={'player':name})
                             elif nkey == "minecraft:swim_one_cm":
-                                mc_cm_traveled.add_sample("mc_cm_traveled_total'",value=nval,labels={'player':name,'method':"swimming"})
+                                mc_cm_traveled.add_sample("mc_cm_traveled_total",value=nval,labels={'player':name,'method':"swimming"})
                             elif nkey == "minecraft:fly_one_cm":
-                                mc_cm_traveled.add_sample("mc_cm_traveled_total'",value=nval,labels={'player':name,'method':"flying"})
+                                mc_cm_traveled.add_sample("mc_cm_traveled_total",value=nval,labels={'player':name,'method':"flying"})
                             elif nkey == "minecraft:open_chest":
                                 mc_chests_opened.add_sample('mc_chests_opened_total',value=nval,labels={'player':name})
                             elif nkey == "minecraft:fall_one_cm":
-                                mc_cm_traveled.add_sample("mc_cm_traveled_total'",value=nval,labels={'player':name,'method':"falling"})
+                                mc_cm_traveled.add_sample("mc_cm_traveled_total",value=nval,labels={'player':name,'method':"falling"})
                             elif nkey == "minecraft:crouch_one_cm":
-                                mc_cm_traveled.add_sample("mc_cm_traveled_total'",value=nval,labels={'player':name,'method':"crouching"})
+                                mc_cm_traveled.add_sample("mc_cm_traveled_total",value=nval,labels={'player':name,'method':"crouching"})
                     elif skey == "minecraft:mined":
                         othersum = 0.0
                         for nkey, nval in sval.items():
