@@ -219,7 +219,7 @@ class MinecraftCollector(object):
                             elif nkey == "minecraft:iron_ore":
                                 mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"iron_ore"})
                             elif nkey == "minecraft:gold_ore":
-                                mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"gold_ore")
+                                mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"gold_ore"})
                             elif nkey == "minecraft:crafting_table":
                                 mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"crafting_table"})
                             elif nkey == "minecraft:sugar_cane":
