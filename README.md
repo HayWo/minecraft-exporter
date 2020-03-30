@@ -1,80 +1,61 @@
 # minecraft-exporter
 
-this is a prometheus minecraft exporter
-This exporter reads minecrafts nbt files, the advancements files and can optionally connect via RCON to your minecraft server.
+this is a prometheus exporter for the vanilla minecraft server
+This exporter reads minecrafts nbt files, the advancements files.
 
-to use it mount your world to /world in the container
+## setup
 
-rcon connection only works on forge servers, it only executes `forge tps` to get tps and tick time informations
+- clone this repo
+- `cd minecraft-exporter`
+- create virtualenv `virtualenv -p /usr/bin/python3 .`
+- activate virtualenv `source bin/activate`
+- install requirements `pip install -r requirements.txt`
+- make startscript executable `chmod +x startscript.sh`
+- ad link to the world folder `ln -s /path/to/world world`
 
-to enable rcon on your minecraft server add the following to the server.properties file:
+## Usage
 
-```
-broadcast-rcon-to-ops=false
-rcon.port=25575
-rcon.password=Password
-enable-rcon=true
-```
+- activate virtualenv `source bin/activate`
+- run startscript `./startscript.sh`
 
-The RCON Module is only enabled if `RCON_HOST` and `RCON_PASSWORD` is set
-
-
-# Usage
-
-```
-docker run -e RCON_HOST=127.0.0.1 \
-	   -e RCON_PORT=25575 \
-	   -e RCON_PASSWORD="Password" \
-	   -e DYNMAP_ENABLED="True" \
-	   -p 8000:8000 \
-	   -v /opt/all_the_mods_3/world:/world \
-	   joshi425/minecraft_exporter
-```
-
-# Metrics
+## Metrics
 
 ```
-blocks_mined
-blocks_picked_up
-player_deaths
-player_jumps
-cm_traveled
-player_xp_total
-player_current_level
-player_food_level
-player_health
-player_score
-entities_killed
-damage_taken
-damage_dealt
-blocks_crafted
-player_playtime
-player_advancements
-player_slept
-player_used_crafting_table
-player_quests_finished # support for betterquesting
-```
-the following Metrics are only exported if RCON is configured:
-```
-dim_tps
-dim_ticktime
-overall_tps
-overall_ticktime
-player_online
-```
-
-the following Metrics are exposed if Dynmap Support is enabled:
-
-```
-dynmap_tile_render_statistics
-dynmap_chunk_loading_statistics_count
-dynmap_chunk_loading_statistics_duration
+mc_items_crafted
+mc_items_broken
+mc_items_mined
+mc_chests_opened
+mc_damage_dealt
+mc_damage_taken
+mc_time_since_rest
+mc_sleeped_bed
+mc_minutes_played
+mc_interaction_with_furnace
+mc_jumps
+mc_time_sneaked
+mc_deaths
+mc_drops
+mc_time_since_death
+mc_left_game
+mc_craftingtable_used
+mc_animals_bred
+mc_kills_total
+mc_killed_by
+mc_items_used
+mc_pickedup_items_total
+mc_kills
+mc_dropped_items_total
+mc_cm_traveled
+mc_xp_total
+mc_current_level
+mc_food_level
+mc_health
+mc_score
+mc_advancements
 ```
 
-# Dashboards
 
-In the folder dashboards you'll find grafana dashboards for these metrics, they are however incomplete and can be expanded 
-or use the following dasboards:
+## Dashboards
+### Not yet working in this fork
 
-https://grafana.com/grafana/dashboards/11993  
-https://grafana.com/grafana/dashboards/11994
+In the folder dashboards you'll find grafana dashboards for these metrics, they are however incomplete and can be expanded
