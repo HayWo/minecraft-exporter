@@ -112,7 +112,7 @@ class MinecraftCollector(object):
                             elif nkey == "minecraft:chicken":
                                 mc_kills.add_sample('mc_kills_total',value=nval,labels={'player':name, 'type':"chicken"})
                             elif nkey == "minecraft:drowned":
-                                mc_kills.add_sample('mc_kills.',value=nval,labels={'player':name, 'type':"drowned"})
+                                mc_kills.add_sample('mc_kills_total',value=nval,labels={'player':name, 'type':"drowned"})
                             elif nkey == "minecraft:zombie_villager":
                                 mc_kills.add_sample('mc_kills_total',value=nval,labels={'player':name, 'type':"zombie_villager"})
                             elif nkey == "minecraft:squid":
