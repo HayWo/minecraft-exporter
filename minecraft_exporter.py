@@ -98,9 +98,12 @@ class MinecraftCollector(object):
                 stats = value
                 for skey, sval in stats.items():
                     if skey == "minecraft:dropped":
+                        othersum = 0.0
                         for nkey, nval in sval.items():
-                            mc_dropped_items_total.add_sample('mc_dropped_items_total',value=nval,labels={'player':name})
+                            othersum += nval
+                        mc_dropped_items_total.add_sample('mc_dropped_items_total',value=othersum,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:killed":
+                        othersum = 0.0
                         for nkey, nval in sval.items():
                             if nkey == "minecraft:spider":
                                 mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"spider"})
@@ -119,11 +122,15 @@ class MinecraftCollector(object):
                             elif nkey == "minecraft:zombie":
                                 mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"zombie"})
                             else:
-                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"other"})
+                                othersum += nval
+                        mc_kills.add_sample('mc_kills',value=othersum,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:picked_up":
+                        othersum = 0.0
                         for nkey, nval in sval.items():
-                            mc_pickedup_items_total.add_sample('mc_pickedup_items_total',value=nval,labels={'player':name})
+                            othersum += nval
+                        mc_pickedup_items_total.add_sample('mc_pickedup_items_total',value=othersum,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:killed_by":
+                        othersum = 0.0
                         for nkey, nval in sval.items():
                             if nkey == "minecraft:spider":
                                 mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"spider"})
@@ -142,10 +149,13 @@ class MinecraftCollector(object):
                             elif nkey == "minecraft:zombie":
                                 mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"zombie"})
                             else:
-                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"other"})
+                                othersum += nval
+                        mc_killed_by.add_sample('mc_killed_by',value=othersum,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:used":
+                        othersum = 0.0
                         for nkey, nval in sval.items():
-                            mc_items_used.add_sample("mc_items_used",value=nval,labels={'player':name, 'type':"other"})
+                            othersum += nval
+                        mc_items_used.add_sample("mc_items_used",value=othersum,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:custom":
                         for nkey, nval in sval.items():
                             if nkey == "minecraft:mob_kills":
@@ -203,6 +213,7 @@ class MinecraftCollector(object):
                             elif nkey == "minecraft:crouch_one_cm":
                                 mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"crouching"})
                     elif skey == "minecraft:mined":
+                        othersum = 0.0
                         for nkey, nval in sval.items():
                             if nkey == "minecraft:dirt":
                                 mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"dirt"})
@@ -229,8 +240,10 @@ class MinecraftCollector(object):
                             elif nkey == "minecraft:chest":
                                 mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"chest"})
                             else:
-                                mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"other"})
+                                othersum += nval
+                        mc_items_mined.add_sample("mc_items_mined",value=othersum,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:broken":
+                        othersum = 0.0
                         for nkey, nval in sval.items():
                             if nkey == "minecraft:stone_pickaxe":
                                 mc_items_broken.add_sample('mc_items_broken',value=nval,labels={'player':name, 'type':"stone_pickaxe"})
@@ -243,10 +256,13 @@ class MinecraftCollector(object):
                             elif nkey == "minecraft:stone_hoe":
                                 mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"stone_hoe"})
                             else:
-                                mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"other"})
+                                othersum += nval
+                        mc_items_broken.add_sample("mc_items_broken",value=othersum,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:crafted":
+                        othersum = 0.0
                         for nkey, nval in sval.items():
-                            mc_items_crafted.add_sample("mc_items_crafted",value=nval,labels={'player':name, 'type':"other"})
+                            othersum += nval
+                        mc_items_crafted.add_sample("mc_items_crafted",value=othersum,labels={'player':name, 'type':"other"})
             else:
                 stat = key.split(".")[1]
                 if stat == "XpTotal":
