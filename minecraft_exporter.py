@@ -118,7 +118,7 @@ class MinecraftCollector(object):
                                 mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"sheep"})
                             elif nkey == "minecraft:zombie":
                                 mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"zombie"})
-                            else
+                            else:
                                 mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:picked_up":
                         for nkey, nval in sval.items():
@@ -141,7 +141,7 @@ class MinecraftCollector(object):
                                 mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"sheep"})
                             elif nkey == "minecraft:zombie":
                                 mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"zombie"})
-                            else
+                            else:
                                 mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:used":
                         for nkey, nval in sval.items():
@@ -228,7 +228,7 @@ class MinecraftCollector(object):
                                 mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"torch"})
                             elif nkey == "minecraft:chest":
                                 mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"chest"})
-                            else
+                            else:
                                 mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:broken":
                         for nkey, nval in sval.items():
@@ -242,7 +242,7 @@ class MinecraftCollector(object):
                                 mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"stone_sword"})
                             elif nkey == "minecraft:stone_hoe":
                                 mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"stone_hoe"})
-                            else
+                            else:
                                 mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"other"})
                     elif skey == "minecraft:crafted":
                         for nkey, nval in sval.items():
