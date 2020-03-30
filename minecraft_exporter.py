@@ -83,7 +83,7 @@ class MinecraftCollector(object):
         mc_pickedup_items_total = Metric('mc_pickedup_items_total','Number of Items a Player picked up',"counter")
         mc_kills = Metric('mc_kills','What the Player killed',"counter")
         mc_dropped_items_total = Metric('mc_dropped_items_total','Items dropped by the Player',"counter")
-        mc_cm_traveled = Metric('mc_cm_travelled','Movement of a Player',"counter")
+        mc_cm_traveled = Metric('mc_cm_traveled','Movement of a Player',"counter")
         mc_xp_total = Metric('mc_xp_total','XP of a Player',"counter")
         mc_current_level = Metric('mc_current_level','Current level of a Player',"counter")
         mc_food_level = Metric('mc_food_level','Food level of a Player',"counter")
