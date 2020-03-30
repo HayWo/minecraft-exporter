@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python minecraft-exporter.py
+python minecraft_exporter.py
