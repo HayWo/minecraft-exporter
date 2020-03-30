@@ -77,7 +77,7 @@ class MinecraftCollector(object):
         mc_left_game = Metric('mc_left_game','Times a Player left the game',"counter")
         mc_craftingtable_used = Metric('mc_craftingtable_used','Times a Player used a crafting table',"counter")
         mc_animals_bred = Metric('mc_animals_bred','Number of animals a Player bred',"counter")
-        mc_kills_total = Metric('mc_kills_total','Number of kills a Player made',"counter")
+        mc_kills_absolute = Metric('mc_kills_absolute','Number of kills a Player made',"counter")
         mc_killed_by = Metric('mc_killed_by','What killed the Player',"counter")
         mc_items_used = Metric('mc_items_used','Items a Player used',"counter")
         mc_pickedup_items_total = Metric('mc_pickedup_items_total','Number of Items a Player picked up',"counter")
@@ -159,7 +159,7 @@ class MinecraftCollector(object):
                     elif skey == "minecraft:custom":
                         for nkey, nval in sval.items():
                             if nkey == "minecraft:mob_kills":
-                                mc_kills_total.add_sample('mc_kills_total',value=nval,labels={'player':name})
+                                mc_kills_absolute.add_sample('mc_kills_absolute_total',value=nval,labels={'player':name})
                             elif nkey == "minecraft:animals_bred":
                                 mc_animals_bred.add_sample('mc_animals_bred_total',value=nval,labels={'player':name})
                             elif nkey == "minecraft:interact_with_crafting_table":
