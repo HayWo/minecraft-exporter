@@ -32,76 +32,6 @@ class MinecraftCollector(object):
             self.map[uuid] = result.json()[0]['name']
             return(result.json()[0]['name'])
 
-    def get_server_stats(self):
-        if not all(x in os.environ for x in ['RCON_HOST','RCON_PASSWORD']):
-            return []
-        dim_tps          = Metric('dim_tps','TPS of a dimension',"counter")
-        dim_ticktime     = Metric('dim_ticktime',"Time a Tick took in a Dimension","counter")
-        overall_tps      = Metric('overall_tps','overall TPS',"counter")
-        overall_ticktime = Metric('overall_ticktime',"overall Ticktime","counter")
-        player_online    = Metric('player_online',"is 1 if player is online","counter")
-        entities         = Metric('entities',"type and count of active entites", "counter")
-        mcr = MCRcon(os.environ['RCON_HOST'],os.environ['RCON_PASSWORD'],port=int(os.environ['RCON_PORT']))
-        mcr.connect()
-
-        # dimensions
-        resp = mcr.command("forge tps")
-        dimtpsregex = re.compile("Dim\s*(-*\d*)\s\((.*?)\)\s:\sMean tick time:\s(.*?) ms\. Mean TPS: (\d*\.\d*)")
-        for dimid, dimname, meanticktime, meantps in dimtpsregex.findall(resp):
-            dim_tps.add_sample('dim_tps',value=meantps,labels={'dimension_id':dimid,'dimension_name':dimname})
-            dim_ticktime.add_sample('dim_ticktime',value=meanticktime,labels={'dimension_id':dimid,'dimension_name':dimname})
-        overallregex = re.compile("Overall\s?: Mean tick time: (.*) ms. Mean TPS: (.*)")
-        overall_tps.add_sample('overall_tps',value=overallregex.findall(resp)[0][1],labels={})
-        overall_ticktime.add_sample('overall_ticktime',value=overallregex.findall(resp)[0][0],labels={})
-
-        # dynmap
-        if os.environ['DYNMAP_ENABLED'] == "True":
-            dynmap_tile_render_statistics   = Metric('dynmap_tile_render_statistics','Tile Render Statistics reported by Dynmap',"counter")
-            dynmap_chunk_loading_statistics_count = Metric('dynmap_chunk_loading_statistics_count','Chunk Loading Statistics reported by Dynmap',"counter")
-            dynmap_chunk_loading_statistics_duration = Metric('dynmap_chunk_loading_statistics_duration','Chunk Loading Statistics reported by Dynmap',"counter")
-
-            resp = mcr.command("dynmap stats")
-
-            dynmaptilerenderregex = re.compile("  (.*?): processed=(\d*), rendered=(\d*), updated=(\d*)")
-            for dim, processed, rendered, updated in dynmaptilerenderregex.findall(resp):
-                dynmap_tile_render_statistics.add_sample('dynmap_tile_render_statistics',value=processed,labels={'type':'processed','file':dim})
-                dynmap_tile_render_statistics.add_sample('dynmap_tile_render_statistics',value=rendered,labels={'type':'rendered','file':dim})
-                dynmap_tile_render_statistics.add_sample('dynmap_tile_render_statistics',value=updated,labels={'type':'updated','file':dim})
-
-            dynmapchunkloadingregex = re.compile("Chunks processed: (.*?): count=(\d*), (\d*.\d*)")
-            for state, count, duration_per_chunk in dynmapchunkloadingregex.findall(resp):
-                dynmap_chunk_loading_statistics_count.add_sample('dynmap_chunk_loading_statistics',value=count,labels={'type': state})
-                dynmap_chunk_loading_statistics_duration.add_sample('dynmap_chunk_loading_duration',value=duration_per_chunk,labels={'type': state})
-
-
-
-        # entites
-        resp = mcr.command("forge entity list")
-        entityregex = re.compile("(\d+): (.*?:.*?)\s")
-        for entitycount, entityname in entityregex.findall(resp):
-            entities.add_sample('entities',value=entitycount,labels={'entity':entityname})
-
-        # player
-        resp = mcr.command("list")
-        playerregex = re.compile("There are \d*\/20 players online:(.*)")
-        if playerregex.findall(resp):
-            for player in playerregex.findall(resp)[0].split(","):
-                if player:
-                    player_online.add_sample('player_online',value=1,labels={'player':player.lstrip()})
-
-        return[dim_tps,dim_ticktime,overall_tps,overall_ticktime,player_online,entities,dynmap_tile_render_statistics,dynmap_chunk_loading_statistics_count,dynmap_chunk_loading_statistics_duration]
-
-    def get_player_quests_finished(self,uuid):
-        with open(self.betterquesting+"/QuestProgress.json") as json_file:
-            data = json.load(json_file)
-            json_file.close()
-        counter = 0
-        for _, value in data['questProgress:9'].items():
-            for _, u in value['tasks:9']['0:10']['completeUsers:9'].items():
-                if u == uuid:
-                    counter +=1
-        return counter
-
     def get_player_stats(self,uuid):
         with open(self.statsdirectory+"/"+uuid+".json") as json_file:
             data = json.load(json_file)
@@ -128,100 +58,222 @@ class MinecraftCollector(object):
     def update_metrics_for_player(self,uuid):
         data = self.get_player_stats(uuid)
         name = self.uuid_to_player(uuid)
-        blocks_mined        = Metric('blocks_mined','Blocks a Player mined',"counter")
-        blocks_picked_up    = Metric('blocks_picked_up','Blocks a Player picked up',"counter")
-        player_deaths       = Metric('player_deaths','How often a Player died',"counter")
-        player_jumps        = Metric('player_jumps','How often a Player has jumped',"counter")
-        cm_traveled         = Metric('cm_traveled','How many cm a Player traveled, whatever that means',"counter")
-        player_xp_total     = Metric('player_xp_total',"How much total XP a player has","counter")
-        player_current_level= Metric('player_current_level',"How much current XP a player has","counter")
-        player_food_level   = Metric('player_food_level',"How much food the player currently has","counter")
-        player_health       = Metric('player_health',"How much Health the player currently has","counter")
-        player_score        = Metric('player_score',"The Score of the player","counter")
-        entities_killed     = Metric('entities_killed',"Entities killed by player","counter")
-        damage_taken        = Metric('damage_taken',"Damage Taken by Player","counter")
-        damage_dealt        = Metric('damage_dealt',"Damage dealt by Player","counter")
-        blocks_crafted      = Metric('blocks_crafted',"Items a Player crafted","counter")
-        player_playtime     = Metric('player_playtime',"Time in Minutes a Player was online","counter")
-        player_advancements = Metric('player_advancements', "Number of completed advances of a player","counter")
-        player_slept        = Metric('player_slept',"Times a Player slept in a bed","counter")
-        player_quests_finished = Metric('player_quests_finished', 'Number of quests a Player has finished', 'counter')
-        player_used_crafting_table = Metric('player_used_crafting_table',"Times a Player used a Crafting Table","counter")
+
+        mc_items_crafted = Metric('mc_items_crafted','Blocks a Player mined',"counter")
+        mc_items_broken = Metric('mc_items_broken','Blocks a Player mined',"counter")
+        mc_items_mined = Metric('mc_items_mined','Blocks a Player mined',"counter")
+        mc_chests_opened = Metric('mc_chests_opened','Blocks a Player mined',"counter")
+        mc_damage_dealt = Metric('mc_damage_dealt','Blocks a Player mined',"counter")
+        mc_damage_taken = Metric('mc_damage_taken','Blocks a Player mined',"counter")
+        mc_time_since_rest = Metric('mc_time_since_rest','Blocks a Player mined',"counter")
+        mc_sleeped_bed = Metric('mc_sleeped_bed','Blocks a Player mined',"counter")
+        mc_minutes_played = Metric('mc_minutes_played','Blocks a Player mined',"counter")
+        mc_interaction_with_furnace = Metric('mc_interaction_with_furnace','Blocks a Player mined',"counter")
+        mc_jumps = Metric('mc_jumps','Blocks a Player mined',"counter")
+        mc_time_sneaked = Metric('mc_time_sneaked','Blocks a Player mined',"counter")
+        mc_deaths = Metric('mc_deaths','Blocks a Player mined',"counter")
+        mc_drops = Metric('mc_drops','Blocks a Player mined',"counter")
+        mc_time_since_death = Metric('mc_time_since_death','Blocks a Player mined',"counter")
+        mc_left_game = Metric('mc_left_game','Blocks a Player mined',"counter")
+        mc_craftingtable_used = Metric('mc_craftingtable_used','Blocks a Player mined',"counter")
+        mc_animals_bred = Metric('mc_animals_bred','Blocks a Player mined',"counter")
+        mc_kills_total = Metric('mc_kills_total','Blocks a Player mined',"counter")
+        mc_killed_by = Metric('mc_killed_by','Blocks a Player mined',"counter")
+        mc_items_used = Metric('mc_items_used','Blocks a Player mined',"counter")
+        mc_pickedup_items_total = Metric('mc_pickedup_items_total','Blocks a Player mined',"counter")
+        mc_kills = Metric('mc_kills','Blocks a Player mined',"counter")
+        mc_dropped_items_total = Metric('mc_dropped_items_total','Blocks a Player mined',"counter")
+        mc_cm_traveled = Metric('mc_cm_travelled','Blocks a Player mined',"counter")
+        mc_xp_total = Metric('mc_xp_total','Blocks a Player mined',"counter")
+        mc_current_level = Metric('mc_current_level','Blocks a Player mined',"counter")
+        mc_food_level = Metric('mc_food_level','Blocks a Player mined',"counter")
+        mc_health = Metric('mc_health','Blocks a Player mined',"counter")
+        mc_score = Metric('mc_score','Blocks a Player mined',"counter")
+        mc_advancements = Metric('mc_advancements','Blocks a Player mined',"counter")
+
         for key, value in data.items():
-            if key in ("stats", "DataVersion"):
+            if key in ("DataVersion"):
                 continue
-            stat = key.split(".")[1] # entityKilledBy
-            if stat == "mineBlock":
-                blocks_mined.add_sample("blocks_mined",value=value,labels={'player':name,'block':'.'.join((key.split(".")[2],key.split(".")[3]))})
-            elif stat == "pickup":
-                blocks_picked_up.add_sample("blocks_picked_up",value=value,labels={'player':name,'block':'.'.join((key.split(".")[2],key.split(".")[3]))})
-            elif stat == "entityKilledBy":
-                if len(key.split(".")) == 4:
-                    player_deaths.add_sample('player_deaths',value=value,labels={'player':name,'cause':'.'.join((key.split(".")[2],key.split(".")[3]))})
-                else:
-                    player_deaths.add_sample('player_deaths',value=value,labels={'player':name,'cause':key.split(".")[2]})
-            elif stat == "jump":
-                player_jumps.add_sample("player_jumps",value=value,labels={'player':name})
-            elif stat == "walkOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"walking"})
-            elif stat == "swimOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"swimming"})
-            elif stat == "sprintOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"sprinting"})
-            elif stat == "diveOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"diving"})
-            elif stat == "fallOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"falling"})
-            elif stat == "flyOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"flying"})
-            elif stat == "boatOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"boat"})
-            elif stat == "horseOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"horse"})
-            elif stat == "climbOneCm":
-                cm_traveled.add_sample("cm_traveled",value=value,labels={'player':name,'method':"climbing"})
-            elif stat == "XpTotal":
-                player_xp_total.add_sample('player_xp_total',value=value,labels={'player':name})
-            elif stat == "XpLevel":
-                player_current_level.add_sample('player_current_level',value=value,labels={'player':name})
-            elif stat == "foodLevel":
-                player_food_level.add_sample('player_food_level',value=value,labels={'player':name})
-            elif stat == "Health":
-                player_health.add_sample('player_health',value=value,labels={'player':name})
-            elif stat == "Score":
-                player_score.add_sample('player_score',value=value,labels={'player':name})
-            elif stat == "killEntity":
-                entities_killed.add_sample('entities_killed',value=value,labels={'player':name,"entity":key.split(".")[2]})
-            elif stat == "damageDealt":
-                damage_dealt.add_sample('damage_dealt',value=value,labels={'player':name})
-            elif stat == "damageTaken":
-                damage_dealt.add_sample('damage_taken',value=value,labels={'player':name})
-            elif stat == "craftItem":
-                blocks_crafted.add_sample('blocks_crafted',value=value,labels={'player':name,'block':'.'.join((key.split(".")[2],key.split(".")[3]))})
-            elif stat == "playOneMinute":
-                player_playtime.add_sample('player_playtime',value=value,labels={'player':name})
-            elif stat == "advancements":
-                player_advancements.add_sample('player_advancements',value=value,labels={'player':name})
-            elif stat == "sleepInBed":
-                player_slept.add_sample('player_slept',value=value,labels={'player':name})
-            elif stat == "craftingTableInteraction":
-                player_used_crafting_table.add_sample('player_used_crafting_table',value=value,labels={'player':name})
-            elif stat == "questsFinished":
-                player_quests_finished.add_sample('player_quests_finished',value=value,labels={'player':name})
-        return [blocks_mined,blocks_picked_up,player_deaths,player_jumps,cm_traveled,player_xp_total,player_current_level,player_food_level,player_health,player_score,entities_killed,damage_taken,damage_dealt,blocks_crafted,player_playtime,player_advancements,player_slept,player_used_crafting_table,player_quests_finished]
+            elif key in ("stats"):
+                stats = value
+                for skey, sval in stats.items():
+                    if skey == "minecraft:dropped":
+                        for nkey, nval in sval.items():
+                            mc_dropped_items_total.add_sample('mc_dropped_items_total',value=nval,labels={'player':name})
+                    elif skey == "minecraft:killed":
+                        for nkey, nval in sval.items():
+                            if nkey == "minecraft:spider":
+                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"spider"})
+                            elif nkey == "minecraft:skeleton":
+                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"skeleton"})
+                            elif nkey == "minecraft:chicken":
+                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"chicken"})
+                            elif nkey == "minecraft:drowned":
+                                mc_kills.add_sample('mc_kills.',value=nval,labels={'player':name, 'type':"drowned"})
+                            elif nkey == "minecraft:zombie_villager":
+                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"zombie_villager"})
+                            elif nkey == "minecraft:squid":
+                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"squid"})
+                            elif nkey == "minecraft:sheep":
+                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"sheep"})
+                            elif nkey == "minecraft:zombie":
+                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"zombie"})
+                            else
+                                mc_kills.add_sample('mc_kills',value=nval,labels={'player':name, 'type':"other"})
+                    elif skey == "minecraft:picked_up":
+                        for nkey, nval in sval.items():
+                            mc_pickedup_items_total.add_sample('mc_pickedup_items_total',value=nval,labels={'player':name})
+                    elif skey == "minecraft:killed_by":
+                        for nkey, nval in sval.items():
+                            if nkey == "minecraft:spider":
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"spider"})
+                            elif nkey == "minecraft:skeleton":
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"skeleton"})
+                            elif nkey == "minecraft:chicken":
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"chicken"})
+                            elif nkey == "minecraft:drowned":
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"drowned"})
+                            elif nkey == "minecraft:zombie_villager":
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"zombie_villager"})
+                            elif nkey == "minecraft:squid":
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"squid"})
+                            elif nkey == "minecraft:sheep":
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"sheep"})
+                            elif nkey == "minecraft:zombie":
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"zombie"})
+                            else
+                                mc_killed_by.add_sample('mc_killed_by',value=nval,labels={'player':name, 'type':"other"})
+                    elif skey == "minecraft:used":
+                        for nkey, nval in sval.items():
+                            mc_items_used.add_sample("mc_items_used",value=nval,labels={'player':name, 'type':"other"})
+                    elif skey == "minecraft:custom":
+                        for nkey, nval in sval.items():
+                            if nkey == "minecraft:mob_kills":
+                                mc_kills_total.add_sample('mc_kills_total',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:animals_bred":
+                                mc_animals_bred.add_sample('mc_animals_bred',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:interact_with_crafting_table":
+                                mc_craftingtable_used.add_sample('mc_craftingtable_used',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:leave_game":
+                                mc_left_game.add_sample('mc_left_game',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:time_since_death":
+                                mc_time_since_death.add_sample('mc_time_since_death',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:climb_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"climbing"})
+                            elif nkey == "minecraft:sprint_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"sprinting"})
+                            elif nkey == "minecraft:walk_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"walking"})
+                            elif nkey == "minecraft:drop":
+                                mc_drops.add_sample('mc_drops',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:deaths":
+                                mc_deaths.add_sample('mc_deaths',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:sneak_time":
+                                mc_time_sneaked.add_sample('mc_time_sneaked',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:walk_under_water_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"walking under water"})
+                            elif nkey == "minecraft:boat_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"boating"})
+                            elif nkey == "minecraft:jump":
+                                mc_jumps.add_sample('mc_jumps',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:walk_on_water_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"walking on water"})
+                            elif nkey == "minecraft:interact_with_furnace":
+                                mc_interaction_with_furnace.add_sample('mc_interaction_with_furnace',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:play_one_minute":
+                                mc_minutes_played.add_sample('mc_minutes_played',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:sleep_in_bed":
+                                mc_sleeped_bed.add_sample('mc_sleeped_bed',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:time_since_rest":
+                                mc_time_since_rest.add_sample('mc_time_since_rest',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:damage_taken":
+                                mc_damage_taken.add_sample('mc_damage_taken',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:minecart_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"minecarting"})
+                            elif nkey == "minecraft:damage_dealt":
+                                mc_damage_dealt.add_sample('mc_damage_dealt',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:swim_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"swimming"})
+                            elif nkey == "minecraft:fly_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"flying"})
+                            elif nkey == "minecraft:open_chest":
+                                mc_chests_opened.add_sample('mc_chests_opened',value=nval,labels={'player':name})
+                            elif nkey == "minecraft:fall_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"falling"})
+                            elif nkey == "minecraft:crouch_one_cm":
+                                mc_cm_traveled.add_sample("mc_cm_traveled",value=nval,labels={'player':name,'method':"crouching"})
+                    elif skey == "minecraft:mined":
+                        for nkey, nval in sval.items():
+                            if nkey == "minecraft:dirt":
+                                mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"dirt"})
+                            elif nkey == "minecraft:cobblestone":
+                                mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"cobblestone"})
+                            elif nkey == "minecraft:sand":
+                                mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"sand"})
+                            elif nkey == "minecraft:stone":
+                                mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"stone"})
+                            elif nkey == "minecraft:gravel":
+                                mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"gravel"})
+                            elif nkey == "minecraft:coal_ore":
+                                mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"coal_ore"})
+                            elif nkey == "minecraft:iron_ore":
+                                mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"iron_ore"})
+                            elif nkey == "minecraft:gold_ore":
+                                mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"gold_ore")
+                            elif nkey == "minecraft:crafting_table":
+                                mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"crafting_table"})
+                            elif nkey == "minecraft:sugar_cane":
+                                mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"sugar_cane"})
+                            elif nkey == "minecraft:torch":
+                                mc_items_mined.add_sample('mc_items_mined',value=nval,labels={'player':name, 'type':"torch"})
+                            elif nkey == "minecraft:chest":
+                                mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"chest"})
+                            else
+                                mc_items_mined.add_sample("mc_items_mined",value=nval,labels={'player':name, 'type':"other"})
+                    elif skey == "minecraft:broken":
+                        for nkey, nval in sval.items():
+                            if nkey == "minecraft:stone_pickaxe":
+                                mc_items_broken.add_sample('mc_items_broken',value=nval,labels={'player':name, 'type':"stone_pickaxe"})
+                            elif nkey == "minecraft:stone_shovel":
+                                mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"stone_shovel"})
+                            elif nkey == "minecraft:stone_axe":
+                                mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"stone_axe"})
+                            elif nkey == "minecraft:stone_sword":
+                                mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"stone_sword"})
+                            elif nkey == "minecraft:stone_hoe":
+                                mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"stone_hoe"})
+                            else
+                                mc_items_broken.add_sample("mc_items_broken",value=nval,labels={'player':name, 'type':"other"})
+                    elif skey == "minecraft:crafted":
+                        for nkey, nval in sval.items():
+                            mc_items_crafted.add_sample("mc_items_crafted",value=nval,labels={'player':name, 'type':"other"})
+            else:
+                stat = key.split(".")[1]
+                if stat == "XpTotal":
+                    mc_xp_total.add_sample('mc_xp_total',value=value,labels={'player':name})
+                elif stat == "XpLevel":
+                    mc_current_level.add_sample('mc_current_level',value=value,labels={'player':name})
+                elif stat == "foodLevel":
+                    mc_food_level.add_sample('mc_food_level',value=value,labels={'player':name})
+                elif stat == "Health":
+                    mc_health.add_sample('mc_health',value=value,labels={'player':name})
+                elif stat == "Score":
+                    mc_score.add_sample('mc_score',value=value,labels={'player':name})
+                elif stat == "advancements":
+                    mc_advancements.add_sample('mc_advancements',value=value,labels={'player':name})
+
+        return [mc_items_crafted, mc_items_broken, mc_items_mined, mc_chests_opened, mc_damage_dealt, mc_damage_taken, mc_time_since_rest, mc_sleeped_bed, mc_minutes_played, mc_interaction_with_furnace, mc_jumps, mc_time_sneaked, mc_deaths, mc_drops, mc_time_since_death, mc_left_game, mc_craftingtable_used, mc_animals_bred, mc_kills_total, mc_killed_by, mc_items_used, mc_pickedup_items_total, mc_kills, mc_dropped_items_total, mc_cm_traveled, mc_xp_total, mc_current_level, mc_food_level, mc_health, mc_score, mc_advancements]
 
     def collect(self):
         for player in self.get_players():
-            for metric in self.update_metrics_for_player(player)+self.get_server_stats():
+            for metric in self.update_metrics_for_player(player):
                 yield metric
 
 
 if __name__ == '__main__':
-    if all(x in os.environ for x in ['RCON_HOST','RCON_PASSWORD']):
-        print("RCON is enabled for "+ os.environ['RCON_HOST'])
 
-    start_http_server(8000)
+    start_http_server(9055)
     REGISTRY.register(MinecraftCollector())
-    print("Exporter started on Port 8000")
+    print("Exporter started on Port 9055")
     while True:
         time.sleep(1)
