@@ -21,41 +21,40 @@ This exporter reads minecrafts nbt files, the advancements files.
 ## Metrics
 
 ```
-mc_items_crafted
-mc_items_broken
-mc_items_mined
-mc_chests_opened
-mc_damage_dealt
-mc_damage_taken
-mc_time_since_rest
-mc_sleeped_bed
-mc_minutes_played
-mc_interaction_with_furnace
-mc_jumps
-mc_time_sneaked
-mc_deaths
-mc_drops
-mc_time_since_death
-mc_left_game
-mc_craftingtable_used
-mc_animals_bred
+mc_items_crafted_total
+mc_items_broken_total
+mc_items_mined_total
+mc_chests_opened_total
+mc_damage_dealt_total
+mc_damage_taken_total
+mc_time_since_rest_total
+mc_sleeped_bed_total
+mc_minutes_played_total
+mc_interaction_with_furnace_total
+mc_jumps_total
+mc_time_sneaked_total
+mc_deaths_total
+mc_drops_total
+mc_time_since_death_total
+mc_left_game_total
+mc_craftingtable_used_total
+mc_animals_bred_total
 mc_kills_total
-mc_killed_by
+mc_killed_by_total
 mc_items_used
 mc_pickedup_items_total
-mc_kills
+mc_kills_absolute_total
 mc_dropped_items_total
-mc_cm_traveled
-mc_xp_total
+mc_cm_traveled_total
+mc_xp_total_total
 mc_current_level
 mc_food_level
-mc_health
-mc_score
-mc_advancements
+mc_health_total
+mc_score_total
+mc_advancements_total
 ```
 
 
 ## Dashboards
-### Not yet working in this fork
 
 In the folder dashboards you'll find grafana dashboards for these metrics, they are however incomplete and can be expanded
