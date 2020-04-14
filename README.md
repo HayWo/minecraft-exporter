@@ -18,6 +18,9 @@ This exporter reads minecrafts nbt files, the advancements files.
 - activate virtualenv `source bin/activate`
 - run startscript `./startscript.sh`
 
+## TODO
+Add more items that are exolicitly named.
+
 ## Metrics
 
 ```
